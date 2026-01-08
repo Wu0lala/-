@@ -67,7 +67,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ activities, settings }) 
           </Pie>
           <Tooltip 
             contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
-            formatter={(value: number) => [`${value} mins`]}
+            formatter={(value: any) => [`${value} mins`]}
           />
           <Legend 
             verticalAlign="bottom" 

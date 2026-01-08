@@ -1,8 +1,14 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Declare process manually to ensure build passes
+declare const process: any;
+
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, (process as any).cwd(), '');
+  // Use safe access to process.cwd()
+  const cwd = process.cwd ? process.cwd() : '.';
+  const env = loadEnv(mode, cwd, '');
+  
   return {
     plugins: [react()],
     define: {

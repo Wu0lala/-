@@ -1,6 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Activity, AppSettings } from '../types';
 
+// Declare process manually to satisfy TS compiler in environments where @types/node might be missing or conflicting
+declare const process: any;
+
 const getClient = (settings: AppSettings) => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {

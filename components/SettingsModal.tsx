@@ -10,6 +10,10 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
+// A common open-source proxy example. 
+// Ideally, users should host their own, but this helps for quick start in restricted regions.
+const PUBLIC_PROXY_URL = "https://gemini-proxy-hazel.vercel.app";
+
 export const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, activities, onSave, onImport, onClose }) => {
   const [language, setLanguage] = useState<Language>(currentSettings.language);
   const [baseUrl, setBaseUrl] = useState<string>(currentSettings.baseUrl || '');
@@ -25,6 +29,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, a
       baseUrl: baseUrl.trim()
     });
     onClose();
+  };
+
+  const handleSetPublicProxy = () => {
+    setBaseUrl(PUBLIC_PROXY_URL);
   };
 
   const handleExport = () => {
@@ -117,7 +125,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentSettings, a
 
           {/* Base URL Input */}
           <div>
-            <label className="block text-sm font-medium text-dark-muted mb-2">{t.apiBaseUrl}</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-dark-muted">{t.apiBaseUrl}</label>
+              <button 
+                type="button" 
+                onClick={handleSetPublicProxy}
+                className="text-xs text-brand-500 hover:text-brand-400 font-medium transition-colors"
+              >
+                {t.usePublicProxy}
+              </button>
+            </div>
             <input 
               type="text"
               value={baseUrl}

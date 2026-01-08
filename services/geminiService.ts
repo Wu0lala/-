@@ -4,16 +4,24 @@ import { Activity, AppSettings } from '../types';
 // Declare process manually to satisfy TS compiler in environments where @types/node might be missing or conflicting
 declare const process: any;
 
-const getClient = (settings: AppSettings) => {
+// A fallback public proxy to try if the main connection fails.
+// This ensures users in restricted regions (like China) have a backup chance without manual config.
+const FALLBACK_PROXY_URL = "https://gemini-proxy-hazel.vercel.app";
+
+const getClient = (settings: AppSettings, forceBaseUrl?: string) => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     throw new Error("API Key is missing in environment variables");
   }
   
-  // Support custom Base URL for regions where Google is blocked (China/Russia)
-  // The SDK allows passing baseUrl in the constructor options
   const options: any = { apiKey };
-  if (settings.baseUrl && settings.baseUrl.trim() !== '') {
+  
+  // 1. Use forced URL if provided (for retry logic)
+  if (forceBaseUrl) {
+    options.baseUrl = forceBaseUrl;
+  } 
+  // 2. Use user settings if present
+  else if (settings.baseUrl && settings.baseUrl.trim() !== '') {
     options.baseUrl = settings.baseUrl.trim();
   }
 
@@ -21,8 +29,6 @@ const getClient = (settings: AppSettings) => {
 };
 
 export const analyzeDailyLog = async (activities: Activity[], settings: AppSettings) => {
-  const ai = getClient(settings);
-  
   if (activities.length === 0) {
     throw new Error("No activities to analyze.");
   }
@@ -52,8 +58,9 @@ export const analyzeDailyLog = async (activities: Activity[], settings: AppSetti
     5. A revised, optimized version of this schedule for a similar day (Markdown format).
   `;
 
-  try {
-    const response = await ai.models.generateContent({
+  // Define the actual API call logic to reuse it
+  const executeCall = async (client: GoogleGenAI) => {
+    const response = await client.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
@@ -69,7 +76,7 @@ export const analyzeDailyLog = async (activities: Activity[], settings: AppSetti
               description: "List of insights about the schedule"
             },
             suggestions: {
-              type: Type.ARRAY,
+              type: Type.ARRAY, 
               items: { type: Type.STRING },
               description: "List of actionable suggestions"
             },
@@ -87,8 +94,30 @@ export const analyzeDailyLog = async (activities: Activity[], settings: AppSetti
     if (!resultText) throw new Error("Empty response from AI");
     
     return JSON.parse(resultText);
+  };
 
-  } catch (error) {
+  try {
+    // Attempt 1: Standard call (using settings or default Google URL)
+    const ai = getClient(settings);
+    return await executeCall(ai);
+
+  } catch (error: any) {
+    // Check if it's likely a network/access error and if the user hasn't already set a custom proxy
+    const isNetworkError = error.message && (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch'));
+    const isDefaultUrl = !settings.baseUrl || settings.baseUrl.trim() === '';
+
+    // Attempt 2: Auto-failover to public proxy if using default URL in a blocked region
+    if (isNetworkError && isDefaultUrl) {
+      console.warn("Direct access failed. Retrying with fallback proxy...");
+      try {
+        const fallbackAi = getClient(settings, FALLBACK_PROXY_URL);
+        return await executeCall(fallbackAi);
+      } catch (retryError) {
+        console.error("Fallback proxy also failed:", retryError);
+        throw error; // Throw original error
+      }
+    }
+
     console.error("Gemini Analysis Error:", error);
     throw error;
   }

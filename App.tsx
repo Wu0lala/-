@@ -8,6 +8,7 @@ import { ActivityForm } from './components/ActivityForm';
 import { AnalysisView } from './components/AnalysisView';
 import { StatsChart } from './components/StatsChart';
 import { SettingsModal } from './components/SettingsModal';
+import { HistoryView } from './components/HistoryView';
 import { getTranslation } from './locales';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   
   const [showForm, setShowForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // New state for history view
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
@@ -83,7 +85,19 @@ function App() {
     setError(null);
     
     try {
-      const result = await analyzeDailyLog(activities, settings);
+      // For daily analysis, we only want to send TODAY's activities to Gemini
+      // Otherwise, we confuse the AI with historical data.
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const todaysActivities = activities.filter(a => a.timestamp >= today.getTime());
+
+      if (todaysActivities.length === 0) {
+        setError("No activities for today to analyze.");
+        setTimeout(() => setError(null), 3000);
+        return;
+      }
+
+      const result = await analyzeDailyLog(todaysActivities, settings);
       setAnalysis(result);
     } catch (err: any) {
       setError(t.errorGeneric);
@@ -96,6 +110,21 @@ function App() {
   // Helper for translations based on current state
   const t = getTranslation(settings.language);
 
+  // Filter for Main View (Only show Today's items by default in the main list)
+  const todaysActivities = activities.filter(a => {
+    const d = new Date(a.timestamp);
+    const now = new Date();
+    return d.getDate() === now.getDate() && 
+           d.getMonth() === now.getMonth() && 
+           d.getFullYear() === now.getFullYear();
+  });
+
+  // Current Date Label for Header
+  const dateLabel = new Date().toLocaleDateString(
+    settings.language === 'zh' ? 'zh-CN' : 'en-US',
+    { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }
+  );
+
   return (
     <div className="min-h-screen pb-24 font-sans text-dark-text bg-dark-bg selection:bg-brand-500/30">
       
@@ -107,25 +136,33 @@ function App() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="font-bold text-lg tracking-tight">{t.appTitle}</h1>
+          <div>
+            <h1 className="font-bold text-lg tracking-tight leading-none">{t.appTitle}</h1>
+            <p className="text-[10px] text-brand-400 font-mono mt-0.5">{dateLabel}</p>
+          </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* History Button */}
+          <button 
+            onClick={() => setShowHistory(true)}
+            className="text-dark-muted hover:text-white transition-colors"
+            aria-label="History"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+            </svg>
+          </button>
+
           <button 
             onClick={() => setShowSettings(true)}
             className="text-dark-muted hover:text-white transition-colors"
             aria-label="Settings"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-          </button>
-          <button 
-            onClick={handleClearAll}
-            className="text-xs font-medium text-dark-muted hover:text-red-400 transition-colors"
-          >
-            {t.reset}
           </button>
         </div>
       </header>
@@ -143,34 +180,47 @@ function App() {
           </div>
         )}
 
-        {/* Stats Section */}
-        {activities.length > 0 && (
+        {/* Stats Section - For Today Only */}
+        {todaysActivities.length > 0 && (
           <div className="mb-6 animate-in fade-in slide-in-from-bottom-4">
-            <StatsChart activities={activities} settings={settings} />
+            <StatsChart activities={todaysActivities} settings={settings} />
           </div>
         )}
 
         {/* Timeline Header */}
         <div className="flex justify-between items-end mb-4">
-          <h2 className="text-xl font-bold text-white">{t.timelineTitle}</h2>
-          <span className="text-sm text-dark-muted">{activities.length} {t.entries}</span>
+          <h2 className="text-xl font-bold text-white">
+            {t.timelineTitle} 
+            <span className="text-xs font-normal text-dark-muted ml-2">({settings.language === 'zh' ? '今日' : 'Today'})</span>
+          </h2>
+          <div className="flex items-center gap-3">
+             <button 
+                onClick={handleClearAll}
+                className="text-xs font-medium text-dark-muted hover:text-red-400 transition-colors"
+                title={t.clearConfirm}
+              >
+                {t.reset}
+              </button>
+             <span className="text-sm text-dark-muted border-l border-white/10 pl-3">{todaysActivities.length} {t.entries}</span>
+          </div>
         </div>
 
         {/* Timeline List */}
         <div className="space-y-3">
-          {activities.length === 0 ? (
+          {todaysActivities.length === 0 ? (
             <div className="text-center py-16 px-4 rounded-2xl border-2 border-dashed border-dark-card bg-dark-card/30">
               <div className="text-4xl mb-3">📝</div>
               <h3 className="text-lg font-medium text-white mb-1">{t.noActivities}</h3>
               <p className="text-dark-muted text-sm">{t.noActivitiesSub}</p>
             </div>
           ) : (
-            activities.map(activity => (
+            todaysActivities.map(activity => (
               <ActivityItem 
                 key={activity.id} 
                 activity={activity} 
                 onDelete={handleDeleteActivity}
                 settings={settings}
+                showDate={false} // Don't show full date on the "Today" view
               />
             ))
           )}
@@ -193,7 +243,7 @@ function App() {
         <div className="max-w-2xl mx-auto">
           <button
             onClick={handleAnalyze}
-            disabled={isAnalyzing || activities.length === 0}
+            disabled={isAnalyzing || todaysActivities.length === 0}
             className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
               isAnalyzing 
                 ? 'bg-dark-card text-dark-muted cursor-not-allowed'
@@ -236,6 +286,14 @@ function App() {
           onSave={handleSaveSettings}
           onImport={handleImportActivities}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showHistory && (
+        <HistoryView 
+          activities={activities}
+          settings={settings}
+          onClose={() => setShowHistory(false)}
         />
       )}
 

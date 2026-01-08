@@ -5,7 +5,8 @@ export const translations = {
     appTitle: 'DailyFlow',
     reset: 'Reset',
     settings: 'Settings',
-    timelineTitle: "Today's Timeline",
+    history: 'History & Stats',
+    timelineTitle: "Timeline",
     entries: 'entries',
     noActivities: 'No activities yet',
     noActivitiesSub: 'Tap the + button to start logging your day.',
@@ -16,6 +17,14 @@ export const translations = {
     clearConfirm: 'Clear all logs for today?',
     errorNoActivities: 'Please add some activities first.',
     errorGeneric: 'Failed to analyze.',
+    
+    // Date & History
+    viewDay: 'Day',
+    viewWeek: 'Week',
+    viewMonth: 'Month',
+    totalDuration: 'Total Duration',
+    hours: 'h',
+    mins: 'm',
     
     // Form
     logActivity: 'Log Activity',
@@ -74,7 +83,8 @@ export const translations = {
     appTitle: 'DailyFlow 日常流',
     reset: '重置',
     settings: '设置',
-    timelineTitle: "今日时间轴",
+    history: '历史统计',
+    timelineTitle: "时间轴",
     entries: '条记录',
     noActivities: '暂无活动记录',
     noActivitiesSub: '点击 + 按钮开始记录你的一天',
@@ -85,6 +95,14 @@ export const translations = {
     clearConfirm: '清空今日所有记录?',
     errorNoActivities: '请先添加一些活动记录',
     errorGeneric: '分析失败，请检查设置',
+
+    // Date & History
+    viewDay: '日',
+    viewWeek: '周',
+    viewMonth: '月',
+    totalDuration: '总时长',
+    hours: '小时',
+    mins: '分钟',
 
     // Form
     logActivity: '记录活动',

@@ -4,8 +4,9 @@ import { getTranslation } from '../locales';
 
 interface ActivityItemProps {
   activity: Activity;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   settings: AppSettings;
+  showDate?: boolean; // New prop to control date display
 }
 
 const CategoryColors: Record<ActivityCategory, string> = {
@@ -24,13 +25,22 @@ const EnergyIcon: Record<EnergyLevel, string> = {
   [EnergyLevel.LOW]: '🪫',
 };
 
-export const ActivityItem: React.FC<ActivityItemProps> = ({ activity, onDelete, settings }) => {
+export const ActivityItem: React.FC<ActivityItemProps> = ({ activity, onDelete, settings, showDate = false }) => {
   const t = getTranslation(settings.language);
+
+  // Format date if needed (YYYY/MM/DD)
+  const dateStr = new Date(activity.timestamp).toLocaleDateString(
+    settings.language === 'zh' ? 'zh-CN' : 'en-US',
+    { month: 'numeric', day: 'numeric', year: showDate ? 'numeric' : undefined }
+  );
 
   return (
     <div className="relative group flex gap-4 p-4 mb-3 bg-dark-card rounded-xl border border-white/5 hover:border-white/10 transition-all">
       {/* Time Column */}
-      <div className="flex flex-col items-center min-w-[3.5rem] border-r border-white/5 pr-4">
+      <div className="flex flex-col items-center min-w-[3.5rem] border-r border-white/5 pr-4 justify-center">
+        {showDate && (
+           <span className="text-[10px] text-brand-400 font-mono mb-1 bg-brand-900/20 px-1 rounded">{dateStr}</span>
+        )}
         <span className="text-sm font-bold text-white">{activity.startTime}</span>
         <span className="text-xs text-dark-muted mt-1">{activity.durationMinutes}m</span>
       </div>
@@ -55,16 +65,18 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ activity, onDelete, 
         </div>
       </div>
 
-      {/* Delete Button (Visible on hover/focus) */}
-      <button 
-        onClick={() => onDelete(activity.id)}
-        className="absolute top-2 right-2 p-1.5 text-dark-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Delete activity"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      {/* Delete Button (Visible on hover/focus), only if handler provided */}
+      {onDelete && (
+        <button 
+          onClick={() => onDelete(activity.id)}
+          className="absolute top-2 right-2 p-1.5 text-dark-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Delete activity"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };

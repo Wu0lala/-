@@ -1,0 +1,5 @@
+{
+  "name": "DailyFlow AI",
+  "description": "A smart daily activity tracker that uses Gemini to analyze your schedule, improve efficiency, and suggest better routines.",
+  "requestFramePermissions": []
+}

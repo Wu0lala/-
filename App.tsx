@@ -40,6 +40,11 @@ function App() {
     saveSettings(newSettings);
   };
 
+  const handleImportActivities = (imported: Activity[]) => {
+    setActivities(imported);
+    // saveActivities is triggered by useEffect
+  };
+
   const handleAddActivity = (newActivity: Omit<Activity, 'id' | 'timestamp'>) => {
     const activity: Activity = {
       ...newActivity,
@@ -227,7 +232,9 @@ function App() {
       {showSettings && (
         <SettingsModal
           currentSettings={settings}
+          activities={activities}
           onSave={handleSaveSettings}
+          onImport={handleImportActivities}
           onClose={() => setShowSettings(false)}
         />
       )}

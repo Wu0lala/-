@@ -47,6 +47,11 @@ export const translations = {
     apiBaseUrl: 'API Base URL (Optional)',
     apiBaseUrlHelp: 'Use a custom proxy URL if Gemini is blocked in your region (e.g., China/Russia). Leave empty for default.',
     saveSettings: 'Save Settings',
+    dataManagement: 'Data Management',
+    exportData: 'Export Data (JSON)',
+    importData: 'Import Data',
+    importSuccess: 'Data imported successfully!',
+    importError: 'Invalid data file.',
 
     // Enums
     categories: {
@@ -110,6 +115,11 @@ export const translations = {
     apiBaseUrl: 'API 代理地址 (Base URL)',
     apiBaseUrlHelp: '如果您在中国大陆或俄罗斯等无法直接访问 Gemini 的地区，请输入自定义代理地址。留空则使用默认地址。',
     saveSettings: '保存设置',
+    dataManagement: '数据管理',
+    exportData: '导出备份 (JSON)',
+    importData: '导入备份',
+    importSuccess: '数据导入成功！',
+    importError: '文件格式错误，导入失败。',
 
     // Enums
     categories: {

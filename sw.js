@@ -1,22 +1,6 @@
-const CACHE_NAME = 'dailyflow-v1';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com'
-];
+const CACHE_NAME = 'dailyflow-v2';
 
-// Install event: cache core assets
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-  self.skipWaiting();
-});
-
-// Activate event: clean up old caches
+// Clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keyList) => {
@@ -32,40 +16,33 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event: Network first, fall back to cache for API calls; Cache first for statics
+// Dynamic caching strategy: Cache everything we visit
 self.addEventListener('fetch', (event) => {
-  // Navigation requests (HTML) - Network first, then cache
+  // Navigation requests (HTML)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
-        })
         .catch(() => {
-          return caches.match(event.request);
+          return caches.match('/index.html') || caches.match('./index.html');
         })
     );
     return;
   }
 
-  // API calls or external scripts - Stale-while-revalidate strategy
+  // Assets (JS, CSS, Images, etc.)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
-        // Only cache valid responses
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
+            cache.put(event.request, responseToCache);
           });
         }
         return networkResponse;
       }).catch(() => {
-        // Network failed, nothing specific to return if not in cache
+        // Return nothing if offline and not in cache
       });
-
       return cachedResponse || fetchPromise;
     })
   );
